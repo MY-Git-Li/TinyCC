@@ -3,7 +3,7 @@ project(libtcc
 	VERSION 0.9.27
 	# DESCRIPTION "TCC dynamic library"
 	# HOMEPAGE_URL "www.zhyingkun.com"
-	LANGUAGES C CXX
+	LANGUAGES C # 移除CXX，仅保留C语言，贴合libtcc纯C特性
 )
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -21,7 +21,12 @@ elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
 	set(CMAKE_C_FLAGS_DEBUG   "-g")
 	set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG")
 elseif(WIN32)
-	set(CMAKE_C_FLAGS         "-Wall -DLIBTCC_AS_DLL -DTCC_TARGET_X86_64 -DTCC_TARGET_PE -DONE_SOURCE=0 -fno-strict-aliasing")
+	# 关键修改：仅当BUILD_SHARED_LIBS为ON（动态库）时，才添加LIBTCC_AS_DLL宏
+	set(CMAKE_C_FLAGS         "-Wall -DTCC_TARGET_X86_64 -DTCC_TARGET_PE -DONE_SOURCE=0 -fno-strict-aliasing")
+	if(BUILD_SHARED_LIBS)
+		# 动态库模式：添加LIBTCC_AS_DLL宏
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DLIBTCC_AS_DLL")
+	endif()
 	# set(CMAKE_C_FLAGS_DEBUG   "-g")
 	set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG")
 endif()
@@ -51,7 +56,8 @@ endif(WIN32)
 source_group(src FILES ${LIBTCC_CORE_SRC} ${LIBTCC_CORE_HEADERS} ${PLATFORM_HEADERS})
 source_group(include FILES ${LIBTCC_HEADERS})
 
-add_library(${PROJECT_NAME} SHARED 
+# 核心修改1：删除SHARED关键字，自动遵循根目录BUILD_SHARED_LIBS配置
+add_library(${PROJECT_NAME}
 	${LIBTCC_CORE_SRC}
 	${LIBTCC_CORE_HEADERS}
 	${PLATFORM_HEADERS}
